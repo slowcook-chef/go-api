@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	//"github.com/aws/aws-lambda-go/lambda"
 
+	"github.com/aws/aws-lambda-go/lambda"
 )
 
 type MyEvent struct {
@@ -20,6 +20,7 @@ func HandleRequest(event MyEvent) (string, error) {
 }
 
 func main() {
-	//lambda.Start(HandleRequest)
-	fmt.Println("hello world")
+	//myApp:= app.NewApp()
+	lambda.Start(HandleRequest)
+	fmt.Println("----App End----")
 }

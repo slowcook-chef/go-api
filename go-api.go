@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/aws/aws-cdk-go/awscdk/v2"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awsdynamodb"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigateway"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsdynamodb"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 )
@@ -53,12 +53,15 @@ func NewGoApiStack(scope constructs.Construct, id string, props *GoApiStackProps
 	integration:= awsapigateway.NewLambdaIntegration(myFunction, nil)
 
 	//Define routes
-	//TODO: add an {id} to register
+	//TODO: add an {id} to register?
 	registerResource := api.Root().AddResource(jsii.String("register"),nil)
 	registerResource.AddMethod(jsii.String("POST"),integration,nil)
 
 	loginResource := api.Root().AddResource(jsii.String("login"),nil)
 	loginResource.AddMethod(jsii.String("POST"),integration,nil)
+
+	protectedResource := api.Root().AddResource(jsii.String("protected"),nil)
+	protectedResource.AddMethod(jsii.String("GET"),integration,nil)
 	
 	return stack
 }

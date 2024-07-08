@@ -9,7 +9,8 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 )
-type ApiHandler struct{
+
+type ApiHandler struct {
 	dbStore database.UserStore
 }
 
@@ -19,21 +20,21 @@ func NewApiHandler(dbStore database.UserStore) ApiHandler {
 	}
 }
 
-func (api ApiHandler) RegisterUserHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error){
+func (api ApiHandler) RegisterUserHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	var registerUser types.RegisterUser
 
 	err := json.Unmarshal([]byte(request.Body), &registerUser)
 
-	if(err!= nil){
+	if err != nil {
 		return events.APIGatewayProxyResponse{
-			Body: "Invalid Request",
+			Body:       "Invalid Request",
 			StatusCode: http.StatusBadRequest,
 		}, err
 	}
 
 	if registerUser.Username == "" || registerUser.Pasword == "" {
 		return events.APIGatewayProxyResponse{
-			Body: "Invalid Request - fields empty",
+			Body:       "Invalid Request - fields empty",
 			StatusCode: http.StatusBadRequest,
 		}, err
 	}
@@ -41,79 +42,79 @@ func (api ApiHandler) RegisterUserHandler(request events.APIGatewayProxyRequest)
 	//does a user with this username already exist?
 
 	userExists, err := api.dbStore.DoesUserExist(registerUser.Username)
-	if err != nil{
+	if err != nil {
 		return events.APIGatewayProxyResponse{
-			Body: "Internal server error",
+			Body:       "Internal server error",
 			StatusCode: http.StatusInternalServerError,
 		}, nil
 	}
-	
+
 	if userExists {
 		return events.APIGatewayProxyResponse{
-			Body: "User already exists",
+			Body:       "User already exists",
 			StatusCode: http.StatusConflict,
 		}, nil
 	}
 
-	user, err:=types.NewUser(registerUser)
-	if err!=nil{
+	user, err := types.NewUser(registerUser)
+	if err != nil {
 		return events.APIGatewayProxyResponse{
-			Body: "Internal server error",
+			Body:       "Internal server error",
 			StatusCode: http.StatusInternalServerError,
-		}, fmt.Errorf("could not create new user %w",err)
+		}, fmt.Errorf("could not create new user %w", err)
 	}
 
 	//we know a user does not exist
 	err = api.dbStore.InsertUser(*user)
 	if err != nil {
 		return events.APIGatewayProxyResponse{
-			Body:		"Internal server error",
-			StatusCode:	http.StatusInternalServerError,
+			Body:       "Internal server error",
+			StatusCode: http.StatusInternalServerError,
 		}, err
 	}
 
 	return events.APIGatewayProxyResponse{
-		Body:	"Successfully registered user",
+		Body:       "Successfully registered user",
 		StatusCode: http.StatusOK,
 	}, nil
 }
 
-func (api ApiHandler) LoginUSer(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error){
-	type LoginRequest struct{
+func (api ApiHandler) LoginUSer(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	type LoginRequest struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}
 
 	var loginRequest LoginRequest
 
-	err:= json.Unmarshal([]byte(request.Body), &loginRequest)
-	if err!= nil {
-		return events.APIGatewayProxyResponse{
-			Body: 	"Invalid Request",
-			StatusCode: http.StatusBadRequest,
-		},err
-	}
-	user,err := api.dbStore.GetUser(loginRequest.Username)
+	err := json.Unmarshal([]byte(request.Body), &loginRequest)
 	if err != nil {
 		return events.APIGatewayProxyResponse{
-			Body: "Internal server error",
+			Body:       "Invalid Request",
+			StatusCode: http.StatusBadRequest,
+		}, err
+	}
+	user, err := api.dbStore.GetUser(loginRequest.Username)
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			Body:       "Internal server error",
 			StatusCode: http.StatusInternalServerError,
-		},err
+		}, err
 	}
 
 	if !types.ValidatePassword(user.PasswordHash, loginRequest.Password) {
 		return events.APIGatewayProxyResponse{
-			Body: "Invalid user credentials",
+			Body:       "Invalid user credentials",
 			StatusCode: http.StatusBadRequest,
-		},nil
+		}, nil
 	}
 
 	accesToken := types.CreateToken(user)
 	successMsg := fmt.Sprintf(`{"access_token: "%s"}`, accesToken)
 
 	return events.APIGatewayProxyResponse{
-		Body: successMsg,
+		Body:       successMsg,
 		StatusCode: http.StatusOK,
-	},nil
+	}, nil
 
 }

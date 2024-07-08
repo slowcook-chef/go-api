@@ -13,7 +13,7 @@ type GoApiStackProps struct {
 	awscdk.StackProps
 }
 
-func NewGoApiStack(scope constructs.Construct, id string, props *GoApiStackProps) awscdk.Stack {
+func NewAccountStack(scope constructs.Construct, id string, props *GoApiStackProps) awscdk.Stack {
 	var sprops awscdk.StackProps
 	if props != nil {
 		sprops = props.StackProps
@@ -26,20 +26,20 @@ func NewGoApiStack(scope constructs.Construct, id string, props *GoApiStackProps
 			Name: jsii.String("username"),
 			Type: awsdynamodb.AttributeType_STRING,
 		},
-		TableName: jsii.String("userTable"),
+		TableName:     jsii.String("userTable"),
 		RemovalPolicy: awscdk.RemovalPolicy_DESTROY,
 	})
 
 	myFunction := awslambda.NewFunction(stack, jsii.String("myLambdaFunction"), &awslambda.FunctionProps{
 		Runtime: awslambda.Runtime_PROVIDED_AL2023(),
-		Code: awslambda.AssetCode_FromAsset(jsii.String("lambda/function.zip"), nil),
+		Code:    awslambda.AssetCode_FromAsset(jsii.String("lambda/function.zip"), nil),
 		Handler: jsii.String("main"),
 	})
 	table.GrantReadWriteData(myFunction)
 
-	api:=awsapigateway.NewRestApi(stack, jsii.String("myAPIGateway"), &awsapigateway.RestApiProps{
+	api := awsapigateway.NewRestApi(stack, jsii.String("myAPIGateway"), &awsapigateway.RestApiProps{
 		DefaultCorsPreflightOptions: &awsapigateway.CorsOptions{
-			AllowHeaders: jsii.Strings("Content-Type","Authorization"),
+			AllowHeaders: jsii.Strings("Content-Type", "Authorization"),
 			AllowMethods: jsii.Strings("GET", "POST", "DELETE", "PUT", "OPTIONS"),
 			//TODO: Define origins instead of wildcard*
 			AllowOrigins: jsii.Strings("*"),
@@ -49,20 +49,73 @@ func NewGoApiStack(scope constructs.Construct, id string, props *GoApiStackProps
 		},
 		CloudWatchRole: jsii.Bool(true),
 	})
-	
-	integration:= awsapigateway.NewLambdaIntegration(myFunction, nil)
+
+	integration := awsapigateway.NewLambdaIntegration(myFunction, nil)
 
 	//Define routes
 	//TODO: add an {id} to register?
-	registerResource := api.Root().AddResource(jsii.String("register"),nil)
-	registerResource.AddMethod(jsii.String("POST"),integration,nil)
+	registerResource := api.Root().AddResource(jsii.String("register"), nil)
+	registerResource.AddMethod(jsii.String("POST"), integration, nil)
 
-	loginResource := api.Root().AddResource(jsii.String("login"),nil)
-	loginResource.AddMethod(jsii.String("POST"),integration,nil)
+	loginResource := api.Root().AddResource(jsii.String("login"), nil)
+	loginResource.AddMethod(jsii.String("POST"), integration, nil)
 
-	protectedResource := api.Root().AddResource(jsii.String("protected"),nil)
-	protectedResource.AddMethod(jsii.String("GET"),integration,nil)
-	
+	protectedResource := api.Root().AddResource(jsii.String("protected"), nil)
+	protectedResource.AddMethod(jsii.String("GET"), integration, nil)
+
+	return stack
+}
+
+func NewSportsDataStack(scope constructs.Construct, id string, props *GoApiStackProps) awscdk.Stack {
+	var sprops awscdk.StackProps
+	if props != nil {
+		sprops = props.StackProps
+	}
+	stack := awscdk.NewStack(scope, &id, &sprops)
+
+	//create DB table
+	table := awsdynamodb.NewTable(stack, jsii.String("myUserTable"), &awsdynamodb.TableProps{
+		PartitionKey: &awsdynamodb.Attribute{
+			Name: jsii.String("username"),
+			Type: awsdynamodb.AttributeType_STRING,
+		},
+		TableName:     jsii.String("userTable"),
+		RemovalPolicy: awscdk.RemovalPolicy_DESTROY,
+	})
+
+	myFunction := awslambda.NewFunction(stack, jsii.String("myLambdaFunction"), &awslambda.FunctionProps{
+		Runtime: awslambda.Runtime_PROVIDED_AL2023(),
+		Code:    awslambda.AssetCode_FromAsset(jsii.String("lambda/function.zip"), nil),
+		Handler: jsii.String("main"),
+	})
+	table.GrantReadWriteData(myFunction)
+
+	api := awsapigateway.NewRestApi(stack, jsii.String("myAPIGateway"), &awsapigateway.RestApiProps{
+		DefaultCorsPreflightOptions: &awsapigateway.CorsOptions{
+			AllowHeaders: jsii.Strings("Content-Type", "Authorization"),
+			AllowMethods: jsii.Strings("GET", "POST", "DELETE", "PUT", "OPTIONS"),
+			//TODO: Define origins instead of wildcard*
+			AllowOrigins: jsii.Strings("*"),
+		},
+		DeployOptions: &awsapigateway.StageOptions{
+			LoggingLevel: awsapigateway.MethodLoggingLevel_INFO,
+		},
+		CloudWatchRole: jsii.Bool(true),
+	})
+
+	integration := awsapigateway.NewLambdaIntegration(myFunction, nil)
+
+	//Define routes
+	//TODO: add an {id} to register?
+	registerResource := api.Root().AddResource(jsii.String("register"), nil)
+	registerResource.AddMethod(jsii.String("POST"), integration, nil)
+
+	loginResource := api.Root().AddResource(jsii.String("login"), nil)
+	loginResource.AddMethod(jsii.String("POST"), integration, nil)
+
+	protectedResource := api.Root().AddResource(jsii.String("protected"), nil)
+	protectedResource.AddMethod(jsii.String("GET"), integration, nil)
+
 	return stack
 }
 
@@ -71,7 +124,7 @@ func main() {
 
 	app := awscdk.NewApp(nil)
 
-	NewGoApiStack(app, "GoApiStack", &GoApiStackProps{
+	NewAccountStack(app, "AccountStack", &GoApiStackProps{
 		awscdk.StackProps{
 			Env: env(),
 		},

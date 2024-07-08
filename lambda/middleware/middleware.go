@@ -14,38 +14,38 @@ import (
 // extracting our claims
 // validating everything
 
-func ValidateJWTMiddleware(next func(request events.APIGatewayProxyRequest)(events.APIGatewayProxyResponse, error)) func(request events.APIGatewayProxyRequest)(events.APIGatewayProxyResponse, error){
-	return func(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error){
+func ValidateJWTMiddleware(next func(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error)) func(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	return func(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 		//extract headers
 		tokenString := extractTokenFromHeaders(request.Headers)
 		if tokenString == "" {
 			return events.APIGatewayProxyResponse{
-				Body: "Missing Auth Token",
+				Body:       "Missing Auth Token",
 				StatusCode: http.StatusUnauthorized,
-			},nil
+			}, nil
 		}
 		//parse token for its claims
-		claims, err:= parseToken(tokenString)
+		claims, err := parseToken(tokenString)
 		if err != nil {
 			return events.APIGatewayProxyResponse{
-				Body: "User unauthorized",
+				Body:       "User unauthorized",
 				StatusCode: http.StatusUnauthorized,
-			},nil
+			}, nil
 		}
 
 		//This token has expired an is no longer valid
-		expires:=int64(claims["expires"].(float64))
+		expires := int64(claims["expires"].(float64))
 		if time.Now().Unix() > expires {
 			return events.APIGatewayProxyResponse{
-				Body: "Token expired",
+				Body:       "Token expired",
 				StatusCode: http.StatusUnauthorized,
-			},nil
+			}, nil
 		}
 		return next(request)
 	}
 }
 
-func extractTokenFromHeaders(headers map[string]string) string{
+func extractTokenFromHeaders(headers map[string]string) string {
 	authHeader, ok := headers["Authorization"]
 	if !ok {
 		return ""
@@ -59,14 +59,14 @@ func extractTokenFromHeaders(headers map[string]string) string{
 }
 
 func parseToken(tokenString string) (jwt.MapClaims, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token)(interface{},error){
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		//TODO: add this to secret manager!
 		secret := "secret"
 		return []byte(secret), nil
 	})
 
-	if err!=nil{
-		return nil,fmt.Errorf("unauthorized")
+	if err != nil {
+		return nil, fmt.Errorf("unauthorized")
 	}
 
 	if !token.Valid {
@@ -78,5 +78,5 @@ func parseToken(tokenString string) (jwt.MapClaims, error) {
 		return nil, fmt.Errorf("claims of unatuhorized type")
 	}
 
-	return claims,nil
+	return claims, nil
 }

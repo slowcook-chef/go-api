@@ -14,21 +14,6 @@ type MyEvent struct {
 	Username string `json:"username"`
 }
 
-// Take payload and do something with it
-func HandleRequest(event MyEvent) (string, error) {
-	if event.Username == "" {
-		return "", fmt.Errorf("username cannot be empty")
-	}
-	return fmt.Sprintf("Succesfully called by - %s", event.Username), nil
-}
-
-func ProtectedHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	return events.APIGatewayProxyResponse{
-		Body:       "This is a secret path",
-		StatusCode: http.StatusOK,
-	}, nil
-}
-
 func main() {
 	myApp := app.NewApp()
 	lambda.Start(func(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -36,9 +21,9 @@ func main() {
 		case "/register":
 			return myApp.ApiHandler.RegisterUserHandler(request)
 		case "/login":
-			return myApp.ApiHandler.LoginUSer(request)
-		case "/protected":
-			return middleware.ValidateJWTMiddleware(ProtectedHandler)(request)
+			return myApp.ApiHandler.LoginUser(request)
+		case "/mlbschedule":
+			return middleware.ValidateJWTMiddleware(myApp.ApiHandler.GetMLBSchedule)(request)
 		default:
 			return events.APIGatewayProxyResponse{
 				Body:       "Not found",

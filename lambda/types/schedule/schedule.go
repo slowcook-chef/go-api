@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"lambda-func/ledger"
 	"lambda-func/secret"
 	"net/http"
 	"strconv"
@@ -94,10 +95,12 @@ func GetMLBEndpointSchedule() (*Schedule, error) {
 	url := fmt.Sprintf("http://rest.datafeeds.rolling-insights.com/api/v1/schedule/now/MLB?RSC_token=%s", secret.GetDFToken())
 	response, err := http.Get(url)
 	if err != nil {
+		ledger.LogError(&err)
 		return nil, err
 	}
 	//Process Immigration
 	if response.StatusCode != http.StatusOK {
+		ledger.LogHandlerProcess("not ok")
 		return nil, err
 	}
 	defer response.Body.Close()

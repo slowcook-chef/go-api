@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	//"lambda-func/ledger"
 	"lambda-func/types"
 	"lambda-func/types/schedule"
 
@@ -13,7 +14,7 @@ import (
 
 const (
 	USER_TABLE_NAME     = "userTable"
-	SCHEDULE_TABLE_NAME = "scheduleTable"
+	SCHEDULE_TABLE_NAME = "gamesTable"
 )
 
 type DataStore interface {
@@ -97,43 +98,59 @@ func (u DynamoDBClient) InsertUser(user types.User) error {
 	return nil
 }
 func (dbclient DynamoDBClient) InsertSchedule(schedule schedule.Schedule) error {
-	var item *dynamodb.PutItemInput
-	//assemble the item
-	for _, game := range schedule.GameData.Games {
-		home, away := game.GetTeams()
-		day, time := game.GetDateTime()
-		exists, _ := dbclient.DoesGameExist(&game)
-		if exists {
-			continue
-		}
-		item = &dynamodb.PutItemInput{
-			TableName: aws.String(SCHEDULE_TABLE_NAME),
-			Item: map[string]*dynamodb.AttributeValue{
-				"game_id": {
-					S: aws.String(game.GetID()),
-				},
-				"away_team": {
-					S: aws.String(away),
-				},
-				"home_team": {
-					S: aws.String(home),
-				},
-				"day": {
-					S: aws.String(day),
-				},
-				"time": {
-					S: aws.String(time),
-				},
-				"status": {
-					S: aws.String(game.GetStatus()),
-				},
-			},
-		}
-		_, err := dbclient.databaseStore.PutItem(item)
-		if err != nil {
-			return fmt.Errorf("error putting item in schedule table")
-		}
-	}
+	//POOP
+	// // Initialize the batch write structure
+	// batchInput := &dynamodb.BatchWriteItemInput{
+	// 	RequestItems: map[string][]*dynamodb.WriteRequest{},
+	// }
+
+	// // Accumulate games into the batch
+	// for _, game := range schedule.GameData.Games {
+	// 	home, away := game.GetTeams()
+	// 	day, time := game.GetDateTime()
+	// 	exists, _ := dbclient.DoesGameExist(&game)
+	// 	if exists {
+	// 		continue
+	// 	}
+
+	// 	// Create a PutRequest for each game
+	// 	putRequest := &dynamodb.WriteRequest{
+	// 		PutRequest: &dynamodb.PutRequest{
+	// 			Item: map[string]*dynamodb.AttributeValue{
+	// 				"gameId": {
+	// 					S: aws.String(game.GetID()),
+	// 				},
+	// 				"awayTeam": {
+	// 					S: aws.String(away),
+	// 				},
+	// 				"homeTeam": {
+	// 					S: aws.String(home),
+	// 				},
+	// 				"day": {
+	// 					S: aws.String(day),
+	// 				},
+	// 				"time": {
+	// 					S: aws.String(time),
+	// 				},
+	// 				"status": {
+	// 					S: aws.String(game.GetStatus()),
+	// 				},
+	// 			},
+	// 		},
+	// 	}
+
+	// 	// Add the PutRequest to the batch
+	// 	batchInput.RequestItems[SCHEDULE_TABLE_NAME] = append(batchInput.RequestItems[SCHEDULE_TABLE_NAME], putRequest)
+	// }
+
+	// // Execute the batch write
+	// output, err := dbclient.databaseStore.BatchWriteItem(batchInput)
+	// if err != nil {
+	// 	return fmt.Errorf("error executing batch write: %v", err)
+	// }
+	// ledger.LogHandlerProcess("!SUCCESS SCHEDULED!" + output.String())
+	// // Handle any unprocessed items...
+	// // For simplicity, this part is omitted. In a real scenario, you should handle retries for unprocessed items.
 
 	return nil
 }
@@ -166,31 +183,38 @@ func (u DynamoDBClient) GetUser(username string) (types.User, error) {
 	return user, err
 }
 
-func (client DynamoDBClient) GetMLBSchedule() (SCH *schedule.Schedule, e error) {
+func (client DynamoDBClient) GetMLBSchedule() (mlbSchedule *schedule.Schedule, e error) {
 	//Query database
-	dbResult, err := client.databaseStore.GetItem(&dynamodb.GetItemInput{
-		TableName: aws.String(USER_TABLE_NAME),
-		Key: map[string]*dynamodb.AttributeValue{
-			"scheduleID": {
-				S: aws.String("mlb"),
-			},
-		},
-	})
-	//Validate query result
-	if err != nil {
-		return SCH, fmt.Errorf("error[%w]: failed getting schedule in database", err)
-	}
-	//Couldnt find entry?
-	if dbResult.Item == nil {
-		return schedule.GetMLBEndpointSchedule()
-	}
-	//Translate Item
-	err = dynamodbattribute.UnmarshalMap(dbResult.Item, &SCH)
-	if err != nil {
-		return SCH, err
-	}
+	return mlbSchedule, nil
 
-	return SCH, err
+	//POOP
+	// ledger.LogHandlerProcess("READING datastore schedules")
+	// dbResult, err := client.databaseStore.GetItem(&dynamodb.GetItemInput{
+	// 	TableName: aws.String(SCHEDULE_TABLE_NAME),
+	// 	Key: map[string]*dynamodb.AttributeValue{
+	// 		"scheduleID": {
+	// 			S: aws.String("mlb"),
+	// 		},
+	// 	},
+	// })
+	// //Validate query result
+	// if err != nil {
+	// 	ledger.LogError(&err)
+	// 	return mlbSchedule, fmt.Errorf("error[%w]: failed getting schedule in database", err)
+	// }
+	// //Couldnt find entry?
+	// if dbResult.Item == nil {
+	// 	ledger.LogHandlerProcess("NO ITEM FOUND, calling enpoint")
+	// 	return schedule.GetMLBEndpointSchedule()
+	// }
+	// //Translate Item
+	// err = dynamodbattribute.UnmarshalMap(dbResult.Item, &mlbSchedule)
+	// if err != nil {
+	// 	ledger.LogError(&err)
+	// 	return mlbSchedule, err
+	// }
+
+	// return mlbSchedule, err
 }
 
 //"Internal server error"

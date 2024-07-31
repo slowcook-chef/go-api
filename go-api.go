@@ -5,6 +5,7 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigateway"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsdynamodb"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awslogs"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 )
@@ -29,20 +30,22 @@ func NewCCStack(scope constructs.Construct, id string, props *GoApiStackProps) a
 		TableName:     jsii.String("userTable"),
 		RemovalPolicy: awscdk.RemovalPolicy_DESTROY,
 	})
-	mlbTable := awsdynamodb.NewTable(stack, jsii.String("myScheduleTable"), &awsdynamodb.TableProps{
+	mlbTable := awsdynamodb.NewTable(stack, jsii.String("myGamesTable"), &awsdynamodb.TableProps{
 		PartitionKey: &awsdynamodb.Attribute{
-			Name: jsii.String("scheduleID"),
+			Name: jsii.String("gameId"),
 			Type: awsdynamodb.AttributeType_STRING,
 		},
-		TableName:     jsii.String("scheduleTable"),
+		TableName:     jsii.String("gamesTable"),
 		RemovalPolicy: awscdk.RemovalPolicy_DESTROY,
 	})
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 	//Provision Lambdas
 	myLambda := awslambda.NewFunction(stack, jsii.String("myLambdaFunction"), &awslambda.FunctionProps{
-		Runtime: awslambda.Runtime_PROVIDED_AL2023(),
-		Code:    awslambda.AssetCode_FromAsset(jsii.String("lambda/function.zip"), nil),
-		Handler: jsii.String("main"),
+		Runtime:      awslambda.Runtime_PROVIDED_AL2023(),
+		Code:         awslambda.AssetCode_FromAsset(jsii.String("lambda/function.zip"), nil),
+		Handler:      jsii.String("main"),
+		Tracing:      awslambda.Tracing_ACTIVE,
+		LogRetention: awslogs.RetentionDays_ONE_WEEK,
 	})
 
 	userTable.GrantReadWriteData(myLambda)

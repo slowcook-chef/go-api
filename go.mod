@@ -1,6 +1,6 @@
 module go-api
 
-go 1.18
+go 1.20
 
 require (
 	github.com/aws/aws-cdk-go/awscdk/v2 v2.146.0
@@ -16,6 +16,7 @@ require (
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/yuin/goldmark v1.4.13 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.17.0 // indirect

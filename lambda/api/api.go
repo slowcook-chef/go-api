@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"lambda-func/database"
+	"lambda-func/ledger"
 	"lambda-func/types"
 	"net/http"
 
@@ -125,11 +126,12 @@ func (api ApiHandler) LoginUser(request events.APIGatewayProxyRequest) (events.A
 // ////////////////// ////////////////// ////////////////// // by Tomas
 func (api ApiHandler) GetMLBSchedule(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	//GET "GetMLBSchedule" (data) (request)
-
-	//Call datastore
+	ledger.LogHandlerStart("GetMLBSchedule() is invoked")
+	//Call datastore, returns empty schedule
 	mlbSchedule, err := api.dataStore.GetMLBSchedule()
 
 	if err != nil {
+		ledger.LogError(&err)
 		return events.APIGatewayProxyResponse{
 			Body:       "Get MLB Schedule error",
 			StatusCode: http.StatusInternalServerError,
@@ -139,15 +141,18 @@ func (api ApiHandler) GetMLBSchedule(request events.APIGatewayProxyRequest) (eve
 	// Translate
 	scheduleJSON, err := json.Marshal(mlbSchedule)
 	if err != nil {
+		ledger.LogError(&err)
 		return events.APIGatewayProxyResponse{
 			Body:       "Error converting MLB schedule to JSON",
 			StatusCode: http.StatusInternalServerError,
 		}, err
 	}
 
+	ledger.LogHandlerEnd("GetMLBSchedule is succesful")
 	//Send response OK
 	return events.APIGatewayProxyResponse{
 		Body:       string(scheduleJSON),
 		StatusCode: http.StatusOK,
 	}, nil
+
 }
